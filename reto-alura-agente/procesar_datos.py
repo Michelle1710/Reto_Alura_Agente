@@ -1,6 +1,25 @@
+import importlib
 import os
 import pandas as pd
-from PyPDF2 import PdfReader
+
+
+def _obtener_pdf_reader():
+    """Devuelve PdfReader de PyPDF2 o pypdf, según esté instalado."""
+    for modulo in ("PyPDF2", "pypdf"):
+        try:
+            modulo_importado = importlib.import_module(modulo)
+            reader_class = getattr(modulo_importado, "PdfReader", None)
+            if reader_class is not None:
+                return reader_class
+        except Exception:
+            continue
+
+    raise ImportError(
+        "PdfReader not found. Install 'PyPDF2' or 'pypdf' (pip install PyPDF2 or pypdf)."
+    )
+
+
+PdfReader = _obtener_pdf_reader()
 from dotenv import load_dotenv
 
 # --- IMPORTACIONES ACTUALIZADAS DE LANGCHAIN ---
@@ -52,7 +71,7 @@ def crear_base_conocimiento(texto):
 
 # --- EJECUCIÓN DEL SCRIPT ---
 if __name__ == "__main__":
-    ruta_documento = "C:\\Users\\Michelle\\Documents\\Proyectos Alura\\Documento\\1. Política de Privacidad de Datos del Paciente.pdf"
+    ruta_documento = "C:\\Users\\Michelle\\Documents\\Proyectos Alura\\Documento\\Información clinica.pdf"
     
     if os.path.exists(ruta_documento):
         contenido = extraer_texto_pdf(ruta_documento)
