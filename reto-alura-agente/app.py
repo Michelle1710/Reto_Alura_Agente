@@ -39,35 +39,27 @@ warnings.filterwarnings("ignore")
 load_dotenv()
 
 # --- PASO 1 Y 2: HERRAMIENTA PARA AGENDAR EN EXCEL ---
+from langchain.tools import tool
+import pandas as pd
+import os
+
 @tool
-def guardar_cita_en_archivo(nombre: str, fecha: str, especialidad: str) -> str:
-    """
-    Útil para agendar, registrar o crear una nueva cita médica para un paciente.
-    Activa esta herramienta ÚNICAMENTE cuando el usuario confirme que quiere agendar una cita 
-    y te haya proporcionado su nombre, la fecha deseada y la especialidad.
-    """
-    archivo_citas = "citas_agendadas.xlsx"
+def agendar_cita(nombre: str, fecha: str, especialidad: str, hora: str) -> str:
+    """Útil para agendar una cita médica. Requiere el nombre del paciente, la fecha, la especialidad y la hora."""
     
-    # Creamos una tabla temporal (DataFrame) con la nueva cita
-    nueva_cita = pd.DataFrame([{
-        "Nombre": nombre,
-        "Fecha": fecha,
-        "Especialidad": especialidad
-    }])
-    
-    # Verificamos si el archivo Excel ya existe de una cita anterior
-    if os.path.exists(archivo_citas):
-        df_existente = pd.read_excel(archivo_citas)
-        # Unimos la información antigua con la nueva cita
-        df_final = pd.concat([df_existente, nueva_cita], ignore_index=True)
+    archivo = "citas_agendadas.xlsx"
+    # Añadimos la columna 'Hora' al diccionario
+    nueva_cita = pd.DataFrame([{"Nombre": nombre, "Fecha": fecha, "Hora": hora, "Especialidad": especialidad}])
+
+    if os.path.exists(archivo):
+        df = pd.read_excel(archivo)
+        df = pd.concat([df, nueva_cita], ignore_index=True)
     else:
-        # Si es la primera cita, la tabla final es solo esta nueva cita
-        df_final = nueva_cita
-        
-    # Guardamos todo de vuelta en el archivo Excel
-    df_final.to_excel(archivo_citas, index=False)
-        
-    return f"Éxito: La cita de {nombre} para {especialidad} el día {fecha} ha sido guardada."
+        df = nueva_cita
+
+    df.to_excel(archivo, index=False)
+    # El mensaje de retorno ahora incluye la hora
+    return f"Tu cita para {especialidad} el {fecha} a las {hora} ha sido agendada con éxito, te esperamos."
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
