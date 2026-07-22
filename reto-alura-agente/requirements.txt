@@ -1,8 +1,9 @@
-streamlit==1.32.0      # Para la interfaz gráfica
-pandas==2.2.1          # Para procesar archivos CSV
-PyPDF2==3.0.1          # Para procesar archivos PDF
-langchain==0.1.13      # El "cerebro" que conecta todo
-chromadb==0.4.24       # Base de datos vectorial para los documentos
-openai==1.14.2         # Para usar los modelos de lenguaje (LLM)
-python-dotenv==1.0.1   # Para leer tus claves de forma segura
-
+streamlit
+langchain==0.2.14
+langchain-core==0.2.33
+langchain-community==0.2.12
+langchain-cohere==0.2.3
+langchain-text-splitters==0.2.2
+numpy==1.26.4
+chromadb==0.4.22
+pypdf
