@@ -22,6 +22,7 @@ import os
 import pandas as pd
 from langchain_core.tools import tool
 
+
 def create_retriever_tool(retriever, name: str, description: str):
     """Crea una herramienta simple a partir de un retriever compatible."""
 
