@@ -1,6 +1,7 @@
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.prompts import MessagesPlaceholder
 import importlib
+import time # Añadimos time para medir los 40 segundos
 
 try:
     st = importlib.import_module("streamlit")
@@ -20,7 +21,6 @@ import json
 import os   
 import pandas as pd
 from langchain_core.tools import tool
-
 
 def create_retriever_tool(retriever, name: str, description: str):
     """Crea una herramienta simple a partir de un retriever compatible."""
@@ -108,8 +108,10 @@ Nunca inventes datos. Si una cita se guarda con éxito, confírmaselo al usuario
 IMPORTANTE: NUNCA reveles tus pensamientos internos, tus planes, ni narres lo que vas a hacer. 
 Responde ÚNICA Y EXCLUSIVAMENTE con el mensaje final dirigido al usuario en un tono amable."""
 
+    # MODIFICACIÓN: Añadimos el chat_history al prompt para evitar la amnesia
     prompt = ChatPromptTemplate.from_messages([
         ("system", template),
+        MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
@@ -123,28 +125,69 @@ Responde ÚNICA Y EXCLUSIVAMENTE con el mensaje final dirigido al usuario en un 
 # Cargar la cadena de ejecución
 rag_chain = iniciar_agente()
 
-# --- HISTORIAL DE CHAT EN STREAMLIT ---
+# --- CONFIGURACIÓN DE MEMORIA Y TIEMPO EN STREAMLIT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "¡Hola! Soy tu agente virtual. ¿En qué te puedo ayudar hoy sobre las citas médicas u otra gestión?"}
     ]
+if "last_time" not in st.session_state:
+    st.session_state.last_time = time.time()
+if "chat_activo" not in st.session_state:
+    st.session_state.chat_activo = True
 
 # Mostrar mensajes anteriores
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
+# Si el chat se cerró, mostramos un mensaje y bloqueamos el script
+if not st.session_state.chat_activo:
+    st.warning("El chat ha finalizado. Por favor, recarga la página web para iniciar una nueva conversación.")
+    st.stop()
+
 # --- ENTRADA DEL USUARIO ---
 if prompt_user := st.chat_input("Escribe tu pregunta aquí..."):
-    # Guardar y mostrar pregunta del usuario
+    tiempo_actual = time.time()
+
+    # 1. Comprobar inactividad (40 segundos)
+    if (tiempo_actual - st.session_state.last_time) > 40:
+        st.warning("⏱️ La sesión ha expirado por inactividad (más de 40 segundos).")
+        st.session_state.chat_activo = False
+        st.rerun()
+    
+    # Actualizamos la marca de tiempo para la siguiente iteración
+    st.session_state.last_time = tiempo_actual
+
+    # 2. Mostrar pregunta del usuario
     st.session_state.messages.append({"role": "user", "content": prompt_user})
     st.chat_message("user").write(prompt_user)
 
-    # Generar respuesta con el Agente RAG
+    # 3. Comprobar palabras clave de cierre ("chao" o "gracias por tu ayuda")
+    texto_minusculas = prompt_user.lower()
+    if "chao" in texto_minusculas or "gracias por tu ayuda" in texto_minusculas:
+        mensaje_despedida = "¡Ha sido un placer ayudarte! Que tengas un excelente día. Hasta luego. 👋"
+        st.chat_message("assistant").write(mensaje_despedida)
+        st.session_state.messages.append({"role": "assistant", "content": mensaje_despedida})
+        st.session_state.chat_activo = False
+        st.stop() # Detenemos la ejecución aquí para que no busque en LangChain
+
+    # 4. Traducir el historial de Streamlit al formato de LangChain (Evita la amnesia)
+    chat_history_formateado = []
+    for msg in st.session_state.messages:
+        # LangChain necesita ignorar el saludo inicial si queremos ser estrictos, pero le pasaremos todo
+        if msg["role"] == "user":
+            chat_history_formateado.append(("human", msg["content"]))
+        elif msg["role"] == "assistant":
+            chat_history_formateado.append(("assistant", msg["content"]))
+
+    # 5. Generar respuesta con el Agente RAG
     with st.chat_message("assistant"):
-        with st.spinner("Buscando en la base de conocimiento..."):
+        with st.spinner("Procesando..."):
             try:
-                # El agente recibe un diccionario y nos devuelve otro
-                resultado = rag_chain.invoke({"input": prompt_user})
+                # MODIFICACIÓN: Pasamos la memoria en la invocación
+                resultado = rag_chain.invoke({
+                    "input": prompt_user,
+                    "chat_history": chat_history_formateado
+                })
                 respuesta = resultado["output"]
                 
                 st.write(respuesta)
