@@ -93,7 +93,7 @@ def iniciar_agente():
     )
 
     # 3. Empaquetar las herramientas disponibles
-    tools = [herramienta_pdf, guardar_cita_en_archivo]
+    tools = [herramienta_pdf, agendar_cita]
 
     # 4. Configurar modelo de lenguaje (LLM)
     llm = ChatCohere(model="command-r-plus-08-2024")
@@ -103,7 +103,10 @@ def iniciar_agente():
 Tienes acceso a dos herramientas: una para buscar información y otra para agendar citas.
 Si el usuario te hace una pregunta general, usa la herramienta de buscar información.
 Si el usuario quiere agendar una cita, DEBES pedirle su Nombre, Fecha deseada y Especialidad ANTES de usar la herramienta de agendar. 
-Nunca inventes datos. Si una cita se guarda con éxito, confírmaselo al usuario de manera cordial."""
+Nunca inventes datos. Si una cita se guarda con éxito, confírmaselo al usuario de manera cordial.
+
+IMPORTANTE: NUNCA reveles tus pensamientos internos, tus planes, ni narres lo que vas a hacer. 
+Responde ÚNICA Y EXCLUSIVAMENTE con el mensaje final dirigido al usuario en un tono amable."""
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", template),
