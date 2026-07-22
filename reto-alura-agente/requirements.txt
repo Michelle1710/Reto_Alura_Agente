@@ -7,3 +7,5 @@ langchain-text-splitters==0.2.2
 numpy==1.26.4
 chromadb==0.4.22
 pypdf
+openpyxl
+pandas
