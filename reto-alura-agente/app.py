@@ -120,16 +120,19 @@ def iniciar_agente():
 
     # 5. Crear el Prompt del Agente Autónomo
 
-    template = """Eres el recepcionista virtual de la clínica. Tu única función es hablar directamente con el paciente como lo haría un humano.
+    template = # 5. Crear el Prompt del Agente Autónomo
+    template = """Eres un recepcionista virtual de una clínica médica. Hablas directamente con el paciente de forma amable.
 
-    MISION:
-    1. Para agendar una cita, necesitas 4 datos confirmados: Nombre, Fecha, Hora y Especialidad.
-    2. Si falta algún dato, pregúntaselo directamente al paciente de forma natural y conversacional.
-
-    REGLA DE ORO (FORMATO DE RESPUESTA):
-    Habla SOLO en primera persona dirigiéndote al paciente (usa "tú"). 
-    ESTÁ TOTALMENTE PROHIBIDO describir tus acciones, planes o usar la palabra "usuario".
-    Empieza tu texto DIRECTAMENTE con tu respuesta para el paciente (ejemplo: "¡Hola! Para agendar tu cita...")."""
+    REGLAS DE ORO:
+    1. NUNCA uses la palabra "usuario". Háblale directamente de "tú" al paciente.
+    2. NUNCA pienses en voz alta. Está estrictamente prohibido decir "Le preguntaré...", "Le pediré...", o "Voy a...". Formula directamente la pregunta (ej. "¿A qué hora te gustaría venir?").
+    3. Para agendar una cita, necesitas 4 datos exactos: 
+       - Nombre del paciente
+       - Fecha de la cita médica (NUNCA pidas fecha de nacimiento)
+       - Hora de la cita
+       - Especialidad médica
+    
+    Si falta algún dato, hazle LA PREGUNTA directamente al paciente."""
 
     # MODIFICACIÓN: Añadimos el chat_history al prompt para evitar la amnesia
     prompt = ChatPromptTemplate.from_messages([
@@ -213,11 +216,23 @@ if prompt_user := st.chat_input("Escribe tu pregunta aquí..."):
                 })
                 respuesta = resultado["output"]
                 
-                # --- FILTRO LIMPIADOR DE PENSAMIENTOS ---
-                # Si la respuesta incluye un error del modelo hablando del "usuario"
-                if "usuario" in respuesta.lower() and "¡" in respuesta:
-                    # Cortamos el texto justo donde empieza el signo de exclamación
-                    respuesta = "¡" + respuesta.split("¡", 1)[1]
+                # --- FILTRO LIMPIADOR AVANZADO ---
+                import re
+                texto_min = respuesta.lower()
+                
+                # Si detectamos que el agente está hablando solo (usando la palabra usuario)
+                if "usuario" in texto_min:
+                    if "nombre" in texto_min:
+                        respuesta = "¡Claro! ¿Me podrías indicar tu nombre completo, por favor?"
+                    elif "fecha" in texto_min or "nacimiento" in texto_min:
+                        respuesta = "¿Para qué día te gustaría agendar tu cita médica?"
+                    elif "hora" in texto_min:
+                        respuesta = "¿A qué hora te gustaría tu cita?"
+                    else:
+                        # Borramos cualquier frase robótica usando Expresiones Regulares
+                        respuesta = re.sub(r"(?i)(Le preguntaré|Le pediré|El usuario|Voy a).*?(\.|$)", "", respuesta)
+                        if respuesta.strip() == "":
+                            respuesta = "¿Me podrías confirmar ese dato, por favor?"
                 # ----------------------------------------
                 
                 st.write(respuesta)
