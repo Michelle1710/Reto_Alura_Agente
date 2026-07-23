@@ -1,9 +1,11 @@
-# 🤖 Agente Inteligente de Atención al Cliente (RAG)
 
 ## 📌 Descripción General del Proyecto
-Este proyecto es un **Agente de Inteligencia Artificial basado en RAG (Retrieval-Augmented Generation)** desarrollado como parte del Challenge de Alura. Su propósito principal es actuar como un asistente virtual para una clínica médica, capaz de responder consultas corporativas en tiempo real extrayendo información precisa y verificada directamente desde documentos oficiales internos, además de gestionar reservas de citas.
+🤖 Agente IA - RAG Corporativo (Reto Alura)
 
----
+Este proyecto es un Asistente Virtual Inteligente creado para una clínica médica. Utiliza Arquitectura RAG (Generación Aumentada por Recuperación) para responder preguntas basadas en un PDF corporativo y tiene la capacidad de agendar citas médicas guardándolas automáticamente en un archivo de Excel.
+
+## 🛠️ Tecnologías utilizadas
+* Python
 
 ## 🏗️ Arquitectura de la Solución
 La solución sigue un flujo modular de Recuperación y Generación Aumentada:
@@ -13,14 +15,22 @@ La solución sigue un flujo modular de Recuperación y Generación Aumentada:
 
 ---
 
-## 🛠️ Tecnologías y Herramientas Utilizadas
-* **Lenguaje:** Python 3.10+
-* **Framework de Orquestación:** LangChain / LangChain Community
-* **Modelo de Lenguaje y Embeddings:** Cohere (`Command-R` y `embed-multilingual-v3.0`)
-* **Base de Datos Vectorial:** ChromaDB
-* **Interfaz Gráfica:** Streamlit
-* **Procesamiento de Documentos:** PyPDF2 / pypdf
+## 🛠️ Tecnologías utilizadas
+* Python
+* LangChain & LangGraph
+* Cohere (LLM y Embeddings)
+* Streamlit (Interfaz gráfica y despliegue)
+* Pandas (Manejo de datos en Excel)
+* PyPDF (Lectura de documentos)
 
+## 🚀 Despliegue en Vivo
+Puedes probar el agente funcionando en la nube aquí: 
+**[(https://retoaluraagente-53ppujagipbrqndbyh37ja.streamlit.app/)]**
+
+## 📂 Características Principales
+1. **Consulta de información:** Responde dudas sobre horarios y políticas leyendo directamente el documento clínico.
+2. **Uso de Herramientas (Tool Calling):** Recopila paso a paso el nombre, fecha, hora y especialidad del paciente para agendar una cita.
+3. **Memoria Conversacional:** Recuerda el hilo de la charla y filtra los pensamientos internos del modelo para dar una respuesta humana.
 ---
 
 ## 🚀 Instrucciones para Ejecutar el Proyecto
@@ -76,3 +86,6 @@ Gestión de Citas (Vía Tool Calling):
 
 Usuario: Quiero agendar una cita médica para Michelle el 24 de julio para la especialidad de traumatología.
 Agente: ¡Perfecto, Michelle! Tu cita para la especialidad de Traumatología ha sido agendada con éxito para el día 24 de julio y registrada en nuestro sistema.
+
+Evidencia de funcionamiento 
+https://docs.google.com/document/d/1HmKM-1VpnxuaOfgeHSYm_ylJUkNWpn1p9Pp4WLeEBOM/edit?tab=t.0
