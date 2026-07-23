@@ -119,7 +119,7 @@ def iniciar_agente():
     llm = ChatCohere(model="command-r-plus-08-2024")
 
     # 5. Crear el Prompt del Agente Autónomo
-    template = # 5. Crear el Prompt del Agente Autónomo
+  
     template = """Eres un asistente virtual experto y amable de una clínica médica. 
 Tienes acceso a dos herramientas: una para buscar información y otra para agendar citas.
 
