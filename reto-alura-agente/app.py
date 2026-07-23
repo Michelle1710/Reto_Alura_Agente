@@ -119,19 +119,17 @@ def iniciar_agente():
     llm = ChatCohere(model="command-r-plus-08-2024")
 
     # 5. Crear el Prompt del Agente Autónomo
-  
-    template = """Eres un asistente virtual experto y amable de una clínica médica. 
-Tienes acceso a dos herramientas: una para buscar información y otra para agendar citas.
 
-REGLAS ESTRICTAS PARA AGENDAR CITAS:
-1. Para agendar, OBLIGATORIAMENTE necesitas 4 datos del paciente: Nombre, Fecha, Hora y Especialidad.
-2. Si el usuario te pide una cita pero le falta alguno de estos 4 datos, pregúntale ESPECÍFICAMENTE por el dato que falta en un tono amable.
-3. Solo usa la herramienta de agendar_cita cuando tengas los 4 datos completos confirmados en la conversación.
+    template = """Eres el recepcionista virtual de la clínica. Tu única función es hablar directamente con el paciente como lo haría un humano.
 
-REGLAS DE FORMATO Y COMPORTAMIENTO (CRÍTICO):
-- NUNCA narres tus acciones ni escribas tus pensamientos internos en la pantalla. 
-- TIENES PROHIBIDO escribir frases que empiecen con "Le pediré al usuario...", "Voy a usar la herramienta..." o "El usuario no ha proporcionado...".
-- Tu respuesta debe contener ÚNICA y EXCLUSIVAMENTE el texto final que leerá el paciente, siendo directo, humano y cordial."""
+    MISION:
+    1. Para agendar una cita, necesitas 4 datos confirmados: Nombre, Fecha, Hora y Especialidad.
+    2. Si falta algún dato, pregúntaselo directamente al paciente de forma natural y conversacional.
+
+    REGLA DE ORO (FORMATO DE RESPUESTA):
+    Habla SOLO en primera persona dirigiéndote al paciente (usa "tú"). 
+    ESTÁ TOTALMENTE PROHIBIDO describir tus acciones, planes o usar la palabra "usuario".
+    Empieza tu texto DIRECTAMENTE con tu respuesta para el paciente (ejemplo: "¡Hola! Para agendar tu cita...")."""
 
     # MODIFICACIÓN: Añadimos el chat_history al prompt para evitar la amnesia
     prompt = ChatPromptTemplate.from_messages([
@@ -174,7 +172,7 @@ if prompt_user := st.chat_input("Escribe tu pregunta aquí..."):
     tiempo_actual = time.time()
 
     # 1. Comprobar inactividad (40 segundos)
-    if (tiempo_actual - st.session_state.last_time) > 40:
+    if (tiempo_actual - st.session_state.last_time) > 60:
         st.warning("⏱️ La sesión ha expirado por inactividad (más de 40 segundos).")
         st.session_state.chat_activo = False
         st.rerun()
@@ -214,6 +212,13 @@ if prompt_user := st.chat_input("Escribe tu pregunta aquí..."):
                     "chat_history": chat_history_formateado
                 })
                 respuesta = resultado["output"]
+                
+                # --- FILTRO LIMPIADOR DE PENSAMIENTOS ---
+                # Si la respuesta incluye un error del modelo hablando del "usuario"
+                if "usuario" in respuesta.lower() and "¡" in respuesta:
+                    # Cortamos el texto justo donde empieza el signo de exclamación
+                    respuesta = "¡" + respuesta.split("¡", 1)[1]
+                # ----------------------------------------
                 
                 st.write(respuesta)
                 # Guardar respuesta en el historial
