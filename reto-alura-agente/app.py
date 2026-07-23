@@ -77,12 +77,8 @@ st.caption("Consulta información en tiempo real basada en la documentación cor
 def iniciar_agente():
     # 1. Cargar base vectorial
     embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
-    # Obligamos a Streamlit a buscar la carpeta chroma_db exactamente al lado de este archivo app.py
-
-embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
     
     # Obligamos a Streamlit a buscar la carpeta chroma_db exactamente al lado de este archivo app.py
-    import os
     ruta_actual = os.path.dirname(os.path.abspath(__file__))
     ruta_db = os.path.join(ruta_actual, "chroma_db")
     vectorstore = Chroma(persist_directory=ruta_db, embedding_function=embeddings)
