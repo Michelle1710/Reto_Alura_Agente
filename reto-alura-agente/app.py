@@ -120,7 +120,7 @@ def iniciar_agente():
 
     # 5. Crear el Prompt del Agente Autónomo
 
-    template = # 5. Crear el Prompt del Agente Autónomo
+
     template = """Eres un recepcionista virtual de una clínica médica. Hablas directamente con el paciente de forma amable.
 
     REGLAS DE ORO:
