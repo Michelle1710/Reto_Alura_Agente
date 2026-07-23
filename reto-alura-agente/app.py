@@ -75,7 +75,7 @@ st.caption("Consulta información en tiempo real basada en la documentación cor
 # --- INICIALIZACIÓN DEL AGENTE INTELIGENTE ---
 @st.cache_resource
 def iniciar_agente():
-    
+
     # 1. Cargar base vectorial
 # 1. Cargar PDF y crear base vectorial EN VIVO (MÉTODO INFALIBLE)
     from langchain_community.document_loaders import PyPDFLoader
@@ -119,14 +119,19 @@ def iniciar_agente():
     llm = ChatCohere(model="command-r-plus-08-2024")
 
     # 5. Crear el Prompt del Agente Autónomo
+    template = # 5. Crear el Prompt del Agente Autónomo
     template = """Eres un asistente virtual experto y amable de una clínica médica. 
 Tienes acceso a dos herramientas: una para buscar información y otra para agendar citas.
-Si el usuario te hace una pregunta general, usa la herramienta de buscar información.
-Si el usuario quiere agendar una cita, DEBES pedirle su Nombre, Fecha deseada y Especialidad ANTES de usar la herramienta de agendar. 
-Nunca inventes datos. Si una cita se guarda con éxito, confírmaselo al usuario de manera cordial.
 
-IMPORTANTE: NUNCA reveles tus pensamientos internos, tus planes, ni narres lo que vas a hacer. 
-Responde ÚNICA Y EXCLUSIVAMENTE con el mensaje final dirigido al usuario en un tono amable."""
+REGLAS ESTRICTAS PARA AGENDAR CITAS:
+1. Para agendar, OBLIGATORIAMENTE necesitas 4 datos del paciente: Nombre, Fecha, Hora y Especialidad.
+2. Si el usuario te pide una cita pero le falta alguno de estos 4 datos, pregúntale ESPECÍFICAMENTE por el dato que falta en un tono amable.
+3. Solo usa la herramienta de agendar_cita cuando tengas los 4 datos completos confirmados en la conversación.
+
+REGLAS DE FORMATO Y COMPORTAMIENTO (CRÍTICO):
+- NUNCA narres tus acciones ni escribas tus pensamientos internos en la pantalla. 
+- TIENES PROHIBIDO escribir frases que empiecen con "Le pediré al usuario...", "Voy a usar la herramienta..." o "El usuario no ha proporcionado...".
+- Tu respuesta debe contener ÚNICA y EXCLUSIVAMENTE el texto final que leerá el paciente, siendo directo, humano y cordial."""
 
     # MODIFICACIÓN: Añadimos el chat_history al prompt para evitar la amnesia
     prompt = ChatPromptTemplate.from_messages([
