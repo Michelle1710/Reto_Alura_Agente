@@ -75,14 +75,28 @@ st.caption("Consulta información en tiempo real basada en la documentación cor
 # --- INICIALIZACIÓN DEL AGENTE INTELIGENTE ---
 @st.cache_resource
 def iniciar_agente():
+    
     # 1. Cargar base vectorial
+# 1. Cargar PDF y crear base vectorial EN VIVO (MÉTODO INFALIBLE)
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    import os
+
+    # Buscamos la ruta exacta del PDF guiándonos por tu estructura de carpetas
+    ruta_actual = os.path.dirname(os.path.abspath(__file__))
+    ruta_pdf = os.path.abspath(os.path.join(ruta_actual, "..", "Documento", "Información clinica.pdf"))
+    
+    # Cargamos y dividimos el documento
+    loader = PyPDFLoader(ruta_pdf)
+    documentos_pdf = loader.load()
+    
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    textos_divididos = text_splitter.split_documents(documentos_pdf)
+    
     embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
     
-    # Obligamos a Streamlit a buscar la carpeta chroma_db exactamente al lado de este archivo app.py
-    ruta_actual = os.path.dirname(os.path.abspath(__file__))
-    ruta_db = os.path.join(ruta_actual, "chroma_db")
-    vectorstore = Chroma(persist_directory=ruta_db, embedding_function=embeddings)
-    
+    # Creamos la base de datos directamente en la memoria temporal
+    vectorstore = Chroma.from_documents(documents=textos_divididos, embedding=embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
     # 2. Convertir el PDF en una Herramienta (MÉTODO MANUAL A PRUEBA DE FALLOS)
