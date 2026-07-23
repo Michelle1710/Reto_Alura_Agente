@@ -21,6 +21,35 @@ import json
 import os   
 import pandas as pd
 from langchain_core.tools import tool
+from typing import Optional
+
+class template:
+    """Wrapper for agent prompt templates with a concrete implementation."""
+
+    def __init__(self, system_message: str):
+        self.system_message = system_message
+
+    def build_messages(
+        self,
+        input_text: str = "{input}",
+        chat_history: Optional[list] = None,
+        agent_scratchpad: Optional[str] = None,
+    ):
+        messages = [("system", self.system_message)]
+        if chat_history:
+            messages.extend(chat_history)
+        messages.append(("human", input_text))
+        if agent_scratchpad is not None:
+            messages.append(("assistant", agent_scratchpad))
+        return messages
+
+    def to_chat_prompt_template(self):
+        return ChatPromptTemplate.from_messages([
+            ("system", self.system_message),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ])
 
 
 def create_retriever_tool(retriever, name: str, description: str):
@@ -120,28 +149,21 @@ def iniciar_agente():
 
     # 5. Crear el Prompt del Agente Autónomo
 
+# 5. Crear el Prompt del Agente Autónomo
+    template_text = """Eres un recepcionista virtual de una clínica médica. Hablas directamente con el paciente de forma amable y conversacional.
 
-    template = """Eres un recepcionista virtual de una clínica médica. Hablas directamente con el paciente de forma amable.
+    REGLAS ESTRICTAS PARA AGENDAR CITAS:
+    Para agendar, necesitas 4 datos, pero DEBES PEDIRLOS UNO POR UNO, NUNCA todos a la vez. Sigue exactamente este orden:
+    1. Si no tienes la especialidad, pregunta SOLO: "¿Para qué especialidad médica necesitas la cita?" y detente.
+    2. Si ya tienes la especialidad pero no la fecha, pregunta SOLO: "¿Para qué fecha te gustaría venir?" y detente.
+    3. Si ya tienes especialidad y fecha, pregunta SOLO: "¿A qué hora te viene mejor?" y detente.
+    4. Si ya tienes especialidad, fecha y hora, pregunta SOLO: "¿Me podrías indicar tu nombre completo?" y detente.
 
-    REGLAS DE ORO:
-    1. NUNCA uses la palabra "usuario". Háblale directamente de "tú" al paciente.
-    2. NUNCA pienses en voz alta. Está estrictamente prohibido decir "Le preguntaré...", "Le pediré...", o "Voy a...". Formula directamente la pregunta (ej. "¿A qué hora te gustaría venir?").
-    3. Para agendar una cita, necesitas 4 datos exactos: 
-       - Nombre del paciente
-       - Fecha de la cita médica (NUNCA pidas fecha de nacimiento)
-       - Hora de la cita
-       - Especialidad médica
-    
-    Si falta algún dato, hazle LA PREGUNTA directamente al paciente."""
+    REGLA DE FORMATO:
+    NUNCA pienses en voz alta. NUNCA escribas "Le preguntaré al...", "Voy a pedirle..." o "El paciente no ha...". Escribe ÚNICAMENTE la pregunta final."""
 
-    # MODIFICACIÓN: Añadimos el chat_history al prompt para evitar la amnesia
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", template),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{input}"),
-        MessagesPlaceholder(variable_name="agent_scratchpad"),
-    ])
-
+    prompt_template = template(template_text)
+    prompt = prompt_template.to_chat_prompt_template()
     # 6. Construir el Agente y el Ejecutor
     agent = create_tool_calling_agent(llm, tools, prompt)
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
@@ -209,30 +231,25 @@ if prompt_user := st.chat_input("Escribe tu pregunta aquí..."):
     with st.chat_message("assistant"):
         with st.spinner("Procesando..."):
             try:
-                # MODIFICACIÓN: Pasamos la memoria en la invocación
+                # Invocamos al agente
                 resultado = rag_chain.invoke({
                     "input": prompt_user,
                     "chat_history": chat_history_formateado
                 })
                 respuesta = resultado["output"]
                 
-                # --- FILTRO LIMPIADOR AVANZADO ---
-                import re
+                # --- FILTRO LIMPIADOR DEFINITIVO ---
                 texto_min = respuesta.lower()
-                
-                # Si detectamos que el agente está hablando solo (usando la palabra usuario)
-                if "usuario" in texto_min:
-                    if "nombre" in texto_min:
-                        respuesta = "¡Claro! ¿Me podrías indicar tu nombre completo, por favor?"
-                    elif "fecha" in texto_min or "nacimiento" in texto_min:
-                        respuesta = "¿Para qué día te gustaría agendar tu cita médica?"
-                    elif "hora" in texto_min:
-                        respuesta = "¿A qué hora te gustaría tu cita?"
+                # Si detectamos intenciones del agente de pensar en voz alta
+                if "preguntaré" in texto_min or "pediré" in texto_min or "voy a" in texto_min:
+                    # Cortamos la basura y nos quedamos desde el signo de exclamación o interrogación
+                    if "¡" in respuesta:
+                        respuesta = "¡" + respuesta.split("¡", 1)[1]
+                    elif "¿" in respuesta:
+                        respuesta = "¿" + respuesta.split("¿", 1)[1]
                     else:
-                        # Borramos cualquier frase robótica usando Expresiones Regulares
-                        respuesta = re.sub(r"(?i)(Le preguntaré|Le pediré|El usuario|Voy a).*?(\.|$)", "", respuesta)
-                        if respuesta.strip() == "":
-                            respuesta = "¿Me podrías confirmar ese dato, por favor?"
+                        # Fallback por si acaso no usó signos
+                        respuesta = respuesta.split(".", 1)[-1].strip()
                 # ----------------------------------------
                 
                 st.write(respuesta)
